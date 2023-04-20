@@ -216,6 +216,12 @@ Remove the additional `:invalid` styles in Firefox. (https://github.com/mozilla/
   box-shadow: none;
 }
 
+#hero{
+    height: 100vh!important;
+    align-items: center!important;
+    justify-content: center!important;
+}
+
 /*
 Add the correct vertical alignment in Chrome and Firefox.
 */
