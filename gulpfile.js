@@ -1,100 +1,136 @@
-// Gulp file
-const { src, dest, watch, series, parallel } = require('gulp');
-const del                  = require('del');
-const browserSync          = require('browser-sync');
-const postcss              = require('gulp-postcss');
-const concat               = require('gulp-concat');
-const tersers              = require('gulp-terser');
-const cleanCSS             = require('gulp-clean-css');
-const purgecss             = require('gulp-purgecss');
-const logSymbols           = require('log-symbols');
+/* Needed gulp config */
 
-//Load Previews on Browser on dev
-function livePreview(done){
-  browserSync.init({
-    files: "./*.html",
-    startPath: "./",
-    server: {
-      baseDir: "./",
-    },
-    port: 3100 || 5000
-  });
-  done();
-}
-function watchFiles(){
-  watch("./*.html",series(devStyles,previewReload));
-  watch(["./tailwind.config.js", "./src/tailwind/**/*"],series(devStyles, previewReload));
-  watch("./src/js/theme.js",series(previewReload));
-  console.log("\n\t" + logSymbols.info,"Watching for Changes..\n");
-}
-// reload
-function previewReload(done){
-  console.log("\n\t" + logSymbols.info,"Reloading Browser Preview.\n");
-  browserSync.reload();
-  done();
-}
-// delete dist
-function devClean(){
-  console.log("\n\t" + logSymbols.info,"Cleaning dist folder for fresh start.\n");
-  return del(["./dist"]);
-}
-// generate css
-function devStyles(){
-  const tailwindcss = require('tailwindcss'); 
-  return src("./src/tailwind/tailwindcss.css")
-    .pipe(postcss([
-      tailwindcss("./tailwind.config.js"),
-      require('autoprefixer'),
-    ]))
-    .pipe(concat({ path: 'style.css'}))
-    .pipe(dest("./src/css"));
-}
-// minify css
-function prodStyles(){
-  return src("./src/css/style.css")
-  .pipe(concat('style.css'))
-  .pipe(cleanCSS({compatibility: 'ie8'}))
-  .pipe(dest("./dist/css"));
-}
-// minify js
-function prodScripts(){
-  return src([
-   "src/vendors/glightbox/dist/js/glightbox.min.js",
-   "src/vendors/@splidejs/splide/dist/js/splide.min.js",
-   "src/vendors/typed.js/lib/typed.min.js",
-   "src/vendors/wow.js/dist/wow.min.js",
-   "src/vendors/smooth-scroll/dist/smooth-scroll.polyfills.min.js",
-    "src/js/theme.js"
-  ])
-  .pipe(concat({ path: 'scripts.js'}))
-  .pipe(tersers())
-  .pipe(dest("./dist/js"));
-}
-// finish log
-function buildFinish(done){
-  console.log("\n\t" + logSymbols.info,`Production is complete.\n`);
-  done();
-}
-// Clean vendors
-function cleanvendor() {
-  return del(["./src/vendors/"]);
-}
-// Copy File from vendors
-function copyvendors() {
-  return src([
-    './node_modules/*glightbox/**/*',
-    './node_modules/*wow.js/**/*',
-    './node_modules/*@splidejs/splide/**/*',
-    './node_modules/*smooth-scroll/**/*',
-    './node_modules/*typed.js/**/*'
-  ])
-  .pipe( dest('./src/vendors/'))
-}
+var gulp = require('gulp');  
+var sass = require('gulp-sass');
+var uglify = require('gulp-uglify');
+var rename = require('gulp-rename');
+var notify = require('gulp-notify');
+var minifycss = require('gulp-minify-css');
+var concat = require('gulp-concat');
+var plumber = require('gulp-plumber');
+var browserSync = require('browser-sync');
+var reload = browserSync.reload;
+const sourcemaps = require('gulp-sourcemaps');
+const autoprefixer = require('gulp-autoprefixer');
 
-exports.updatevendors = series(cleanvendor, copyvendors);
-exports.default = series( devClean, devStyles, livePreview, watchFiles);
-exports.prod = series(
-  devClean,
-  parallel(prodStyles, prodScripts), //Run All tasks in parallel
-  buildFinish
-);
+/* Setup scss path */
+var paths = {
+    scss: './sass/*.scss'
+};
+
+/* Scripts task */
+gulp.task('scripts', function() {
+  return gulp.src([
+    /* Add your JS files here, they will be combined in this order */
+    'js/vendor/jquery.min.js',
+    'js/vendor/jquery.easing.1.3.js',
+    'js/vendor/jquery.stellar.min.js',
+    'js/vendor/jquery.flexslider-min.js',
+    'js/vendor/jquery.countTo.js',
+    'js/vendor/jquery.appear.min.js',
+    'js/vendor/jquery.magnific-popup.min.js',
+    'js/vendor/owl.carousel.min.js',
+    'js/vendor/bootstrap.min.js',
+    'js/vendor/jquery.waypoints.min.js'
+    ])
+    .pipe(concat('scripts.js'))
+    .pipe(gulp.dest('js'))
+    .pipe(rename({suffix: '.min'}))
+    .pipe(uglify())
+    .pipe(gulp.dest('js'));
+});
+
+gulp.task('minify-main', function() {
+  return gulp.src([
+    /* Add your JS files here, they will be combined in this order */
+    'js/main.js'
+    ])
+    .pipe(rename({suffix: '.min'}))
+    .pipe(uglify())
+    .pipe(gulp.dest('js'));
+});
+
+/* Sass task */
+gulp.task('sass', function () {  
+    gulp.src('scss/style.scss')
+    .pipe(plumber())
+    .pipe(sass({
+      errLogToConsole: true,
+
+      //outputStyle: 'compressed',
+      // outputStyle: 'compact',
+      // outputStyle: 'nested',
+      outputStyle: 'expanded',
+      precision: 10
+    }))
+
+    .pipe(sourcemaps.init())
+    .pipe(autoprefixer({
+        browsers: ['last 2 versions'],
+        cascade: false
+    }))
+    .pipe(gulp.dest('css'))
+
+    .pipe(rename({suffix: '.min'}))
+    .pipe(minifycss())
+    .pipe(gulp.dest('css'))
+    /* Reload the browser CSS after every change */
+    .pipe(reload({stream:true}));
+});
+
+gulp.task('merge-styles', function () {
+
+    return gulp.src([
+        'css/vendor/bootstrap.min.css',
+        'css/vendor/animate.css',
+        'css/vendor/icomoon.css',
+        'css/vendor/flexslider.css',
+        'css/vendor/owl.carousel.min.css',
+        'css/vendor/owl.theme.default.min.css',
+        'css/vendor/magnific-popup.css',
+        'css/vendor/photoswipe.css',
+        'css/vendor/default-skin.css',
+        'fonts/icomoon/style.css',
+        ])
+        // .pipe(sourcemaps.init())
+        // .pipe(autoprefixer({
+        //     browsers: ['last 2 versions'],
+        //     cascade: false
+        // }))
+        .pipe(concat('styles-merged.css'))
+        .pipe(gulp.dest('css'))
+        // .pipe(rename({suffix: '.min'}))
+        // .pipe(minifycss())
+        .pipe(sourcemaps.write('.'))
+        .pipe(gulp.dest('css'))
+        .pipe(reload({stream:true}));
+});
+
+/* Reload task */
+gulp.task('bs-reload', function () {
+    browserSync.reload();
+});
+
+/* Prepare Browser-sync for localhost */
+gulp.task('browser-sync', function() {
+    browserSync.init(['css/*.css', 'js/*.js'], {
+        
+        proxy: 'localhost/probootstrap/black'
+        /* For a static server you would use this: */
+        /*
+        server: {
+            baseDir: './'
+        }
+        */
+    });
+});
+
+/* Watch scss, js and html files, doing different things with each. */
+gulp.task('default', ['sass', 'scripts', 'browser-sync'], function () {
+    /* Watch scss, run the sass task on change. */
+    gulp.watch(['scss/*.scss', 'scss/**/*.scss'], ['sass'])
+    /* Watch app.js file, run the scripts task on change. */
+    gulp.watch(['js/main.js'], ['minify-main'])
+    /* Watch .html files, run the bs-reload task on change. */
+    gulp.watch(['*.html'], ['bs-reload']);
+});
