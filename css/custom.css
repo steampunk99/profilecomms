@@ -1,11 +1,4 @@
-/* Your custom css code goes here *//*!==============================
- * Theme Name: Haus
- * Theme URL: https://probootstrap.com/haus-free-real-estate-html5-website-template
- * Version: 1.0
- * Author: ProBootstrap.com
- * Author URL: https://probootstrap.com
- * License: Released for free under the Creative Commons Attribution 3.0 license (probootstrap.com/license)
- */
+
 @font-face {
     font-family: 'icomoon';
     src: url("../fonts/icomoon/icomoon.eot?1z9v6x");
@@ -1043,7 +1036,7 @@
   .slides-text {
     z-index: 99;
     position: relative;
-    padding-top: 350px;
+    padding-top: 250px;
     max-width: 600px;
     margin: 0 auto;
   }
@@ -1959,14 +1952,14 @@
   
   /* Flexslider override style */
   .slider-height, .flexslider, .flexslider2, .flexslider .slides > li, .flexslider2 .slides > li {
-    height: 800px;
+    height: 600px;
     overflow: hidden;
   }
   
   @media screen and (max-width: 480px) {
     .slider-height, .flexslider, .flexslider2, .flexslider .slides > li, .flexslider2 .slides > li {
       height: inherit;
-      height: 500px;
+      height: 300px;
     }
   }
   
